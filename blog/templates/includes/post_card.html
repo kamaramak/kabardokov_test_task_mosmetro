@@ -9,7 +9,7 @@
       <h6 class="card-subtitle mb-2 text-muted">
         <small>
           {{ post.created_at|date:"d E Y, H:i" }}<br>
-          От автора <a class="text-muted" href="{% url 'posts:profile' post.author.username %}">@{{ post.author.username }}</a>
+          От автора <a class="text-muted" href="{% url 'posts:home' %}">@{{ post.author.username }}</a>
         </small>
       </h6>
       <p class="card-text">{{ post.content|truncatewords:10 }}</p>

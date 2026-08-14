@@ -17,6 +17,7 @@ class UserAdmin(UsAdm):
         "last_name",
         "date_of_birth",
     )
+    list_display_links = ("id", "username")
     search_fields = (
         "username",
         "email",
