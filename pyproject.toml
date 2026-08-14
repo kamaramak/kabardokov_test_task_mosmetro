@@ -1,0 +1,45 @@
+[tool.black]
+line-length = 79
+target-version = ['py312']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # Django миграции
+  | migrations
+  
+  # Виртуальные окружения
+  | \.venv
+  | \.env
+  | env
+  | venv
+  
+  # Системные папки
+  | \.git
+  | \.eggs
+  | build
+  | dist
+  
+  # Кэши
+  | \.mypy_cache
+  | \.pytest_cache
+  | __pycache__
+  
+  # Статические файлы
+  | static
+  | media
+  
+  # Другие исключения
+  | templates
+)/
+'''
+
+[tool.isort]
+skip = [
+    "env",
+    "venv", 
+    ".venv",
+    ".env",
+    "__pycache__",
+    "migrations",
+    "*.sqlite3",
+]
