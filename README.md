@@ -19,10 +19,18 @@
   одноразовой ссылкой на смену пароля
 - тесты на встроенном `unittest` Django.
 
-## Требования
+## Стек
 
-- Python 3.10 или новее;
-- SQLite (входит в стандартную поставку Python).
+- Python 3.13
+- Django 6.1
+- SQLite
+- Pillow 12.3.0
+- django-bootstrap5 26.2
+- Django Debug Toolbar 7.1.1
+- unittest — тестирование
+- Black 26.5.1
+- isort 8.0.1
+- Ruff 0.16.3
 
 ## Подготовка проекта
 
