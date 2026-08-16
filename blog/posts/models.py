@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from core.constants import MAX_BIO_LENGTH, MIN_BIO_LENGTH
 from core.validators import validate_image_size
 from django.core.validators import MaxLengthValidator, MinLengthValidator
@@ -37,6 +39,7 @@ class Post(models.Model):
     image = models.ImageField(
         upload_to="post_images/",
         null=True,
+        blank=True,
         default=None,
         verbose_name="Изображение",
         validators=(validate_image_size,),
@@ -44,6 +47,10 @@ class Post(models.Model):
 
     def __str__(self):
         return f"Пост {self.id} от {self.author.username}"
+
+    @property
+    def was_updated(self):
+        return self.updated_at - self.created_at > timedelta(seconds=1)
 
     class Meta:
         verbose_name = "Пост"

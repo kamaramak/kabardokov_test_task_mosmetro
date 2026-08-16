@@ -8,11 +8,23 @@
       {% endif %}
       <h6 class="card-subtitle mb-2 text-muted">
         <small>
-          {{ post.created_at|date:"d E Y, H:i" }}<br>
+          {{ post.created_at|date:"d E Y, H:i" }}
+          {% if post.was_updated %}
+            | Обновлено: {{ post.updated_at|date:"d E Y, H:i" }}
+          {% endif %}<br>
           От автора <a class="text-muted" href="{% url 'posts:home' %}">@{{ post.author.username }}</a>
         </small>
       </h6>
       <p class="card-text">{{ post.content|truncatewords:10 }}</p>
+      <a href="{% url 'posts:post_detail' post.id %}" class="card-link">Читать полный текст</a>
+      {% if user.is_authenticated and request.user == post.author %}
+        <a class="btn btn-sm text-muted" href="{% url 'posts:update_post' post.id %}" role="button">
+          Редактировать публикацию
+        </a>
+        <a class="btn btn-sm text-muted" href="{% url 'posts:delete_post' post.id %}" role="button">
+          Удалить публикацию
+        </a>
+      {% endif %}
     </div>
   </div>
 </div>

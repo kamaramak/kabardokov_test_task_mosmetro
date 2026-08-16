@@ -19,13 +19,38 @@
             </a>
           </li>
           {% if user.is_authenticated %}
-            <div class="btn-group" role="group" aria-label="Basic outlined example">
-              {% comment %} <button type="button" class="btn btn-outline-primary"><a class="text-decoration-none text-reset"
-                  href="{% url 'posts:create_post' %}">Написать пост</a></button> {% endcomment %}
-              <button type="button" class="btn btn-outline-primary"><a class="text-decoration-none text-reset"
-                  href="{% url 'posts:home' %}">{{ user.username }}</a></button>
-              <button type="button" class="btn btn-outline-primary"><a class="text-decoration-none text-reset"
-                  href="{% url 'logout' %}">Выйти</a></button>
+            <form id="logout-form"
+              action="{% url 'logout' %}"
+              method="post">
+              {% csrf_token %}
+            </form>
+            <div class="btn-group" role="group">
+              <a class="btn btn-outline-primary"
+                href="{% url 'posts:post_CUD_form' %}">
+                  Написать пост
+              </a>
+              <a class="btn btn-outline-primary d-flex align-items-center gap-2"
+                href="{% url 'users:profile' user.username %}">
+                  {% if user.avatar %}
+                    <img src="{{ user.avatar.url }}"
+                        alt="Аватар {{ user.username }}"
+                        class="rounded-circle"
+                        width="30"
+                        height="30">
+                  {% else %}
+                    <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center"
+                        style="width: 30px; height: 30px;">
+                        {{ user.username|first|upper }}
+                    </div>
+                  {% endif %}
+                  {{ user.first_name }}
+              </a>
+
+              <button type="submit"
+                      form="logout-form"
+                      class="btn btn-outline-primary">
+                  Выйти
+              </button>
             </div>
           {% else %}
             <div class="btn-group" role="group" aria-label="Basic outlined example">

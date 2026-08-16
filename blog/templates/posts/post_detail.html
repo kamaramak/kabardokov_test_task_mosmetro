@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}
+  Пост пользователя {{ post.author.username }} от {{ post.created_at }}
+{% endblock %}
+{% block content %}
+  <div class="col d-flex justify-content-center">
+    <div class="card" style="width: 40rem;">
+      <div class="card-body">
+        {% if post.image %}
+          <a href="{{ post.image.url }}" target="_blank">
+            <img class="border-3 rounded img-fluid img-thumbnail mb-2 mx-auto d-block" src="{{ post.image.url }}">
+          </a>
+        {% endif %}
+        <h6 class="card-subtitle mb-2 text-muted">
+          <small>
+            {{ post.created_at|date:"d E Y, H:i" }} | <br>
+            От автора <a class="text-muted" href="{% url 'users:profile' post.author.username %}">@{{ post.author.username }}</a>          </small>
+        </h6>
+        <p class="card-text">{{ post.content|linebreaksbr }}</p>
+        {% if user == post.author %}
+          <div class="mb-2">
+            <a class="btn btn-sm text-muted" href="{% url 'posts:update_post' post.id %}" role="button">
+              Редактировать публикацию
+            </a>
+            <a class="btn btn-sm text-muted" href="{% url 'posts:delete_post' post.id %}" role="button">
+              Удалить публикацию
+            </a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% endblock %}

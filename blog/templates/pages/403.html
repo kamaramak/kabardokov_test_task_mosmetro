@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}Доступ запрещен{% endblock %}
+{% block content %}
+  <h1>У Вас нет прав для доступа к этой странице. 403</h1>
+  <a href="{% url 'posts:home' %}">Вернуться на главную</a>
+{% endblock %}

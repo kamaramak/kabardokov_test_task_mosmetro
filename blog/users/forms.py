@@ -54,3 +54,19 @@ class UserUpdateForm(forms.ModelForm):
             "avatar",
             "bio",
         )
+
+
+class UserProfileForm(forms.ModelForm):
+    """Форма для отображения профиля пользователя."""
+
+    class Meta:
+        model = User
+        fields = (
+            "username",
+            "email",
+            "first_name",
+            "last_name",
+            "date_of_birth",
+            "avatar",
+            "bio",
+        )

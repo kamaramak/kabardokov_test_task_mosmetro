@@ -18,6 +18,7 @@ class CustomUser(AbstractUser):
     avatar = models.ImageField(
         upload_to="avatars/",
         null=True,
+        blank=True,
         default=None,
         verbose_name="Аватар",
         validators=(validate_avatar_size,),
