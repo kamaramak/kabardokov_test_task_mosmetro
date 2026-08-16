@@ -24,14 +24,21 @@
 - Python 3.10 или новее;
 - SQLite (входит в стандартную поставку Python).
 
+## Подготовка проекта
+
+Выполните команды из корня репозитория.
+
+```bash
+python -m venv env
+source env/Scripts/activate
+pip install -r requirements.txt
+```
+
 ## Запуск
 
 Выполните команды из корня репозитория.
 
-```powershell
-python -m venv env
-.\env\Scripts\Activate.ps1
-pip install -r requirements.txt
+```bash
 cd blog
 python manage.py migrate
 python manage.py runserver
@@ -41,7 +48,7 @@ python manage.py runserver
 
 ## Тестирование и проверки
 
-```powershell
+```bash
 cd blog
 python manage.py test
 python manage.py check
@@ -50,7 +57,7 @@ python manage.py makemigrations --check --dry-run
 
 Для проверки форматирования и базовых ошибок также доступен Ruff:
 
-```powershell
+```bash
 cd blog
 ruff check .
 ```
