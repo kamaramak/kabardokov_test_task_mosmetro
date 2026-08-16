@@ -43,3 +43,17 @@ skip = [
     "migrations",
     "*.sqlite3",
 ]
+
+[tool.ruff]
+line-length = 79
+
+exclude = [
+    ".git",
+    ".venv",
+    "venv",
+    "__pycache__",
+    "migrations",
+]
+
+[tool.ruff.lint]
+select = ["E", "F"]
