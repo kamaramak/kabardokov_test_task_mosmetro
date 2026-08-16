@@ -85,9 +85,9 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 CSRF_FAILURE_VIEW = "pages.views.csrf_failure"
 
-# EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
-
-# EMAIL_FILE_PATH = BASE_DIR / 'sent_emails'
+EMAIL_BACKEND = "django.core.mail.backends.filebased.EmailBackend"
+EMAIL_FILE_PATH = BASE_DIR / "sent_emails"
+DEFAULT_FROM_EMAIL = "noreply@mosmetro.local"
 
 LOGIN_URL = "login"
 
@@ -110,9 +110,3 @@ STATICFILES_DIRS = [
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
-
-MAILERS = {
-    "default": {
-        "BACKEND": "django.core.mail.backends.console.EmailBackend",
-    },
-}

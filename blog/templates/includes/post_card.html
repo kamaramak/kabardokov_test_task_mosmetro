@@ -12,7 +12,7 @@
           {% if post.was_updated %}
             | Обновлено: {{ post.updated_at|date:"d E Y, H:i" }}
           {% endif %}<br>
-          От автора <a class="text-muted" href="{% url 'posts:profile' post.author.username %}">@{{ post.author.username }}</a>
+          От автора <a class="text-muted" href="{% url 'users:profile' post.author.username %}">@{{ post.author.username }}</a>
         </small>
       </h6>
       <p class="card-text">{{ post.content|truncatewords:10 }}</p>

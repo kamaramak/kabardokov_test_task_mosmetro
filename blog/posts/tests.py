@@ -1,201 +1,179 @@
+import io
 import tempfile
 
-import pytest
 from core.constants import PAGE_SIZE
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import override_settings
+from django.test import TestCase, override_settings
 from django.urls import reverse
-from posts.models import Post
+from PIL import Image
+
+from .models import Post
 
 User = get_user_model()
 
 
-@pytest.fixture
-def author(db):
-    return User.objects.create_user(
-        username="author", password="pass", email="author@ex.com"
-    )
+class PostViewsTests(TestCase):
+    def setUp(self):
+        self.author = User.objects.create_user(
+            username="author", password="pass12345", email="author@example.com"
+        )
+        self.other_user = User.objects.create_user(
+            username="other", password="pass12345", email="other@example.com"
+        )
+        self.post = Post.objects.create(
+            author=self.author, content="Исходный текст публикации"
+        )
 
+    def test_unauthenticated_user_is_redirected_from_post_creation(self):
+        response = self.client.get(reverse("posts:post_CUD_form"))
 
-@pytest.fixture
-def other_user(db):
-    return User.objects.create_user(
-        username="other", password="pass", email="other@ex.com"
-    )
+        self.assertRedirects(
+            response,
+            f"{reverse('login')}?next={reverse('posts:post_CUD_form')}",
+        )
 
+    def test_author_can_create_post(self):
+        self.client.login(username="author", password="pass12345")
 
-@pytest.fixture
-def logged_in_author(client, author):
-    client.login(username="author", password="pass")
-    return client
+        response = self.client.post(
+            reverse("posts:post_CUD_form"),
+            {"content": "Новая публикация автора"},
+        )
 
+        post = Post.objects.get(content="Новая публикация автора")
+        self.assertEqual(post.author, self.author)
+        self.assertRedirects(
+            response, reverse("posts:post_detail", kwargs={"pk": post.pk})
+        )
 
-@pytest.fixture
-def logged_in_other(client, other_user):
-    client.login(username="other", password="pass")
-    return client
+    def test_empty_post_content_is_invalid(self):
+        self.client.login(username="author", password="pass12345")
 
+        response = self.client.post(
+            reverse("posts:post_CUD_form"), {"content": ""}
+        )
 
-@pytest.mark.django_db
-@override_settings(MEDIA_ROOT=tempfile.mkdtemp())
-def test_create_post_authenticated(logged_in_author, author):
-    """Авторизованный пользователь может создать пост."""
-    url = reverse("posts:post_CUD_form")
-    image = SimpleUploadedFile(
-        "post.jpg", b"content", content_type="image/jpeg"
-    )
-    response = logged_in_author.post(
-        url,
-        {
-            "content": "Test post content",
-        },
-        files={"image": image},
-    )
-    if response.status_code == 200:
-        if "form" in response.context:
-            print(response.context["form"].errors)
-    assert response.status_code == 302
-    post = Post.objects.get(content="Test post content")
-    assert post.author == author
-    assert response.url == reverse("posts:post_detail", kwargs={"pk": post.pk})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("content", response.context["form"].errors)
 
+    def test_too_short_post_content_is_invalid(self):
+        self.client.login(username="author", password="pass12345")
 
-@pytest.mark.django_db
-def test_create_post_unauthenticated(client):
-    """Неавторизованный пользователь перенаправляется на логин."""
-    url = reverse("posts:post_CUD_form")
-    response = client.get(url)
-    assert response.status_code == 302
-    assert response.url.startswith(reverse("login"))
-    response = client.post(url, {"content": "Any content"})
-    assert response.status_code == 302
-    assert response.url.startswith(reverse("login"))
-    assert Post.objects.count() == 0
+        response = self.client.post(
+            reverse("posts:post_CUD_form"), {"content": "Коротко"}
+        )
 
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("content", response.context["form"].errors)
 
-@pytest.mark.django_db
-def test_create_post_empty_content(logged_in_author):
-    """Валидация: пустой контент не допускается."""
-    url = reverse("posts:post_CUD_form")
-    response = logged_in_author.post(url, {"content": ""})
-    assert response.status_code == 200
-    assert "form" in response.context
-    assert "content" in response.context["form"].errors
-    assert Post.objects.count() == 0
+    @override_settings(MEDIA_ROOT=tempfile.mkdtemp())
+    def test_author_can_create_post_with_image(self):
+        image = Image.new("RGB", (20, 20), color="blue")
+        image_bytes = io.BytesIO()
+        image.save(image_bytes, format="JPEG")
+        self.client.login(username="author", password="pass12345")
 
+        response = self.client.post(
+            reverse("posts:post_CUD_form"),
+            {
+                "content": "Публикация с изображением",
+                "image": SimpleUploadedFile(
+                    "post.jpg",
+                    image_bytes.getvalue(),
+                    content_type="image/jpeg",
+                ),
+            },
+        )
 
-@pytest.fixture
-def existing_post(author):
-    return Post.objects.create(author=author, content="Original content")
+        post = Post.objects.get(content="Публикация с изображением")
+        self.assertTrue(post.image.name.startswith("post_images/"))
+        self.assertEqual(response.status_code, 302)
 
+    def test_other_user_cannot_update_post(self):
+        self.client.login(username="other", password="pass12345")
+        url = reverse("posts:update_post", kwargs={"pk": self.post.pk})
 
-@pytest.mark.django_db
-def test_edit_post_unauthenticated(client, existing_post):
-    """Неавторизованный пользователь не может редактировать пост."""
-    url = reverse(
-        "posts:update_post",
-        kwargs={"pk": existing_post.pk},
-    )
+        response = self.client.post(url, {"content": "Попытка изменить пост"})
 
-    response = client.get(url)
+        self.assertEqual(response.status_code, 403)
+        self.post.refresh_from_db()
+        self.assertEqual(self.post.content, "Исходный текст публикации")
 
-    assert response.status_code == 302
-    assert response.url.startswith(reverse("login"))
+    def test_unauthenticated_user_is_redirected_from_post_update(self):
+        url = reverse("posts:update_post", kwargs={"pk": self.post.pk})
+        response = self.client.get(url)
 
+        self.assertRedirects(
+            response,
+            f"{reverse('login')}?next={url}",
+        )
 
-@pytest.mark.django_db
-def test_edit_post_author(logged_in_author, existing_post):
-    """Автор может редактировать свой пост."""
-    url = reverse("posts:update_post", kwargs={"pk": existing_post.pk})
-    response = logged_in_author.post(url, {"content": "Updated content"})
-    if response.status_code == 200:
-        if "form" in response.context:
-            print(response.context["form"].errors)
-    assert response.status_code == 302
-    assert response.url == reverse(
-        "posts:post_detail", kwargs={"pk": existing_post.pk}
-    )
-    existing_post.refresh_from_db()
-    assert existing_post.content == "Updated content"
+    def test_author_can_update_and_delete_post(self):
+        self.client.login(username="author", password="pass12345")
+        update_url = reverse("posts:update_post", kwargs={"pk": self.post.pk})
 
+        response = self.client.post(
+            update_url, {"content": "Обновленный текст поста"}
+        )
 
-@pytest.mark.django_db
-def test_edit_post_other_user_403(logged_in_other, existing_post):
-    """Другой пользователь не может редактировать чужой пост."""
-    url = reverse("posts:update_post", kwargs={"pk": existing_post.pk})
-    response = logged_in_other.get(url)
-    assert response.status_code == 403
-    response = logged_in_other.post(url, {"content": "Hacked"})
-    assert response.status_code == 403
-    existing_post.refresh_from_db()
-    assert existing_post.content == "Original content"
+        self.assertRedirects(
+            response, reverse("posts:post_detail", kwargs={"pk": self.post.pk})
+        )
+        self.post.refresh_from_db()
+        self.assertEqual(self.post.content, "Обновленный текст поста")
 
+        response = self.client.post(
+            reverse("posts:delete_post", kwargs={"pk": self.post.pk})
+        )
 
-@pytest.mark.django_db
-def test_delete_post_author(logged_in_author, existing_post):
-    """Автор может удалить свой пост."""
-    url = reverse("posts:delete_post", kwargs={"pk": existing_post.pk})
-    response = logged_in_author.post(url)
-    assert response.status_code == 302
-    assert response.url == reverse(
-        "users:profile", kwargs={"username": existing_post.author.username}
-    )
-    assert not Post.objects.filter(pk=existing_post.pk).exists()
+        self.assertRedirects(
+            response,
+            reverse(
+                "users:profile", kwargs={"username": self.author.username}
+            ),
+        )
+        self.assertFalse(Post.objects.filter(pk=self.post.pk).exists())
 
+    def test_other_user_cannot_delete_post(self):
+        self.client.login(username="other", password="pass12345")
 
-@pytest.mark.django_db
-def test_delete_post_other_user_403(logged_in_other, existing_post):
-    """Другой пользователь не может удалить чужой пост."""
-    url = reverse("posts:delete_post", kwargs={"pk": existing_post.pk})
-    response = logged_in_other.post(url)
-    assert response.status_code == 403
-    assert Post.objects.filter(pk=existing_post.pk).exists()
+        response = self.client.post(
+            reverse("posts:delete_post", kwargs={"pk": self.post.pk})
+        )
 
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(Post.objects.filter(pk=self.post.pk).exists())
 
-@pytest.fixture
-def posts_for_pagination(author):
-    for i in range(PAGE_SIZE + 5):
-        Post.objects.create(author=author, content=f"Test post #{i}")
+    def test_unauthenticated_user_is_redirected_from_post_deletion(self):
+        url = reverse("posts:delete_post", kwargs={"pk": self.post.pk})
 
+        response = self.client.post(url)
 
-@pytest.mark.django_db
-def test_post_list_pagination(client, posts_for_pagination):
-    url = reverse("posts:home")
+        self.assertRedirects(response, f"{reverse('login')}?next={url}")
 
-    response = client.get(url)
+    def test_post_detail_is_public(self):
+        response = self.client.get(
+            reverse("posts:post_detail", kwargs={"pk": self.post.pk})
+        )
 
-    assert response.status_code == 200
-    assert "page_obj" in response.context
+        self.assertContains(response, self.post.content)
+        self.assertContains(response, self.author.username)
 
-    page_obj = response.context["page_obj"]
+    def test_post_list_is_paginated(self):
+        Post.objects.bulk_create(
+            [
+                Post(author=self.author, content=f"Публикация номер {number}")
+                for number in range(PAGE_SIZE + 5)
+            ]
+        )
 
-    assert len(page_obj) == PAGE_SIZE
-    assert page_obj.has_next()
+        response = self.client.get(reverse("posts:home"))
 
-    assert page_obj.paginator.count == Post.objects.count()
-    assert (
-        page_obj.paginator.num_pages
-        == Post.objects.count() // PAGE_SIZE
-        + (1 if Post.objects.count() % PAGE_SIZE else 0)
-    )
+        self.assertEqual(len(response.context["page_obj"]), PAGE_SIZE)
+        self.assertTrue(response.context["page_obj"].has_next())
 
-    response2 = client.get(url + "?page=2")
+        response = self.client.get(f"{reverse('posts:home')}?page=2")
 
-    assert response2.status_code == 200
-
-    page_obj2 = response2.context["page_obj"]
-
-    assert len(page_obj2) == 5
-    assert not page_obj2.has_next()
-
-
-@pytest.mark.django_db
-def test_post_detail_view(client, existing_post):
-    """Просмотр отдельного поста доступен всем."""
-    url = reverse("posts:post_detail", kwargs={"pk": existing_post.pk})
-    response = client.get(url)
-    assert response.status_code == 200
-    content = response.content.decode()
-    assert "Original content" in content
-    assert existing_post.author.username in content
+        self.assertEqual(len(response.context["page_obj"]), 6)
+        self.assertFalse(response.context["page_obj"].has_next())

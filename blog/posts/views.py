@@ -1,7 +1,6 @@
 from core.constants import PAGE_SIZE
 from core.mixins import OnlyAuthorMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
 from django.views.generic import (
     CreateView,
@@ -41,14 +40,10 @@ class PostCreateView(LoginRequiredMixin, CreateView):
 class PostDetailView(DetailView):
     model = Post
     template_name = "posts/post_detail.html"
-
-    def get_queryset(self):
-        pk = self.kwargs.get("pk")
-        post = get_object_or_404(Post, pk=pk)
-        return Post.objects.filter(pk=post.pk).select_related("author")
+    queryset = Post.objects.select_related("author")
 
 
-class PostUpdateView(OnlyAuthorMixin, UpdateView):
+class PostUpdateView(LoginRequiredMixin, OnlyAuthorMixin, UpdateView):
     model = Post
     form_class = PostForm
     template_name = "posts/post_CUD_form.html"
@@ -57,7 +52,7 @@ class PostUpdateView(OnlyAuthorMixin, UpdateView):
         return reverse_lazy("posts:post_detail", kwargs={"pk": self.object.pk})
 
 
-class PostDeleteView(OnlyAuthorMixin, DeleteView):
+class PostDeleteView(LoginRequiredMixin, OnlyAuthorMixin, DeleteView):
     model = Post
     template_name = "posts/post_CUD_form.html"
 

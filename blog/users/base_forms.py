@@ -7,7 +7,7 @@ User = get_user_model()
 
 
 class UserBaseForm(forms.ModelForm):
-    """Базовая форма для работы с профилем пользователя."""
+    """Базовая форма с полями профиля пользователя."""
 
     class Meta:
         model = User
@@ -23,11 +23,10 @@ class UserBaseForm(forms.ModelForm):
 
 
 class UserCleanBaseForm(UserBaseForm):
-    """Базовая форма с валидацией полей профиля пользователя."""
+    """Базовая форма с валидацией данных профиля."""
 
     def clean_email(self):
         email = self.cleaned_data.get("email")
-
         queryset = User.objects.filter(email=email)
 
         if self.instance.pk:
