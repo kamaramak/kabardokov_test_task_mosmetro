@@ -25,6 +25,7 @@ class CustomUser(AbstractUser):
     )
     bio = models.TextField(
         null=True,
+        blank=True,
         default=None,
         verbose_name="О себе",
         validators=[
@@ -33,7 +34,7 @@ class CustomUser(AbstractUser):
         ],
     )
     date_of_birth = models.DateField(
-        null=True, default=None, verbose_name="Дата рождения"
+        null=True, default=None, blank=True, verbose_name="Дата рождения"
     )
 
     def __str__(self):
