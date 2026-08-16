@@ -170,3 +170,6 @@ __marimo__/
 # Media
 media/avatars/*
 media/post_images/*
+
+!media/avatars/.gitkeep
+!media/post_images/.gitkeep
