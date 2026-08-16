@@ -58,7 +58,6 @@ cover/
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
-blog/media/
 blog/sent_emails/
 blog/staticfiles/
 
@@ -168,8 +167,8 @@ __marimo__/
 .streamlit/secrets.toml
 
 # Media
-media/avatars/*
-media/post_images/*
+blog/media/avatars/*
+blog/media/post_images/*
 
-!media/avatars/.gitkeep
-!media/post_images/.gitkeep
+!blog/media/avatars/.gitkeep
+!blog/media/post_images/.gitkeep
